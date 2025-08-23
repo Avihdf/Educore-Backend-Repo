@@ -10,7 +10,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: 'https://educore-beta.vercel.app/',
+  origin: 'https://educore-beta.vercel.app',
   credentials: true
 }));
 
