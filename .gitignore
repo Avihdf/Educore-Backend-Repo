@@ -25,6 +25,12 @@ public/otheruploads/*
 public/thumbnails/*
 public/uploads/*
 
+# echo "" > public/coursesuploads/.gitkeep
+# echo "" > public/otheruploads/.gitkeep
+# echo "" > public/thumbnails/.gitkeep
+# echo "" > public/uploads/.gitkeep
+
+
 # Keep empty folders tracked
 !public/coursesuploads/.gitkeep
 !public/otheruploads/.gitkeep

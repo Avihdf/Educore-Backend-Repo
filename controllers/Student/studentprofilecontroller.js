@@ -4,7 +4,7 @@ const bcrpyt = require('bcrypt')
 exports.updatestudentprofile = async (req, res) => {
 
     const { name, dob } = req.body;  // This works now
-    const profile_picture = req.file ? req.file.filename : null; // File is parsed by Multer
+    const profile_picture = req.file ? req.file.path : null; // File is parsed by Multer
 
 
     try {
