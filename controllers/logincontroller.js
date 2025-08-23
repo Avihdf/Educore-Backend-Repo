@@ -25,7 +25,7 @@ exports.loginformemail = async (req, res) => {
 
         if (existuser.role==='educator') {
             res.clearCookie('admin');
-            res.cookie('admin',token,{httpOnly:true,Credential:true,secure: true,})
+            res.cookie('admin',token,{httpOnly:true,Credential:true,secure: true,sameSite:'none'})
             return res.status(200).json(
             {
                 message: 'Welcome Educator ' + existuser.name,
@@ -36,7 +36,7 @@ exports.loginformemail = async (req, res) => {
         }
 
         res.clearCookie('user');
-        res.cookie('user',token,{httpOnly:true,Credential:true,secure: true,})
+        res.cookie('user',token,{httpOnly:true,Credential:true,secure: true,sameSite:'none'})
         
        
         return res.status(200).json(
