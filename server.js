@@ -9,8 +9,19 @@ const cookieParser = require('cookie-parser');
 const app = express();
 
 
+const allowedOrigins = [
+  'https://educore-beta.vercel.app',
+  'http://localhost:3000' // for local dev
+];
+
 app.use(cors({
-  origin: 'https://educore-beta.vercel.app',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS Not Allowed'));
+    }
+  },
   credentials: true
 }));
 
