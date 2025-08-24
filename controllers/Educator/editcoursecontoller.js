@@ -1,4 +1,5 @@
 const course = require('../../models/courses');
+const cloudinary = require('cloudinary').v2;
 
 exports.updatecoursedetails = async (req, res) => {
     const { coursetitle, discription, language, coursetime, price, discount } = req.body;
@@ -17,19 +18,22 @@ exports.updatecoursedetails = async (req, res) => {
     }
 
     try {
-        // Find course
         const courseData = await course.findById(courseid);
         if (!courseData) {
             return res.status(404).json({ error: 'Course not found' });
         }
 
-        // ✅ If a new thumbnail file is uploaded, update it
+        // ✅ If a new thumbnail is uploaded, delete the old one from Cloudinary first
         const thumbnailFile = req.files?.find(f => f.fieldname === 'thumbnail');
         if (thumbnailFile) {
-            courseData.thumbnail = `thumbnails/${thumbnailFile.filename}`;
+            if (courseData.thumbnail) {
+                const oldThumbPublicId = extractPublicId(courseData.thumbnail);
+                if (oldThumbPublicId) await cloudinary.uploader.destroy(oldThumbPublicId);
+            }
+            courseData.thumbnail = thumbnailFile.path; // Cloudinary URL
         }
 
-        // ✅ Update course fields
+        // ✅ Update basic course info
         courseData.coursetitle = coursetitle;
         courseData.discription = discription;
         courseData.language = language;
@@ -37,22 +41,23 @@ exports.updatecoursedetails = async (req, res) => {
         courseData.price = price;
         courseData.discount = discount;
 
-        // ✅ Handle new chapters from body
+        // ✅ Parse and add new chapters (if provided)
         let newChaptersData = [];
         if (req.body.newChapters) {
-            if (typeof req.body.newChapters === "string") {
-                newChaptersData = JSON.parse(req.body.newChapters);
-            } else {
-                newChaptersData = req.body.newChapters;
+            try {
+                newChaptersData = typeof req.body.newChapters === "string"
+                    ? JSON.parse(req.body.newChapters)
+                    : req.body.newChapters;
+            } catch (err) {
+                return res.status(400).json({ error: 'Invalid newChapters format' });
             }
         }
 
+        // ✅ Attach uploaded videos to new chapters
         newChaptersData.forEach((chapter, index) => {
             const videos = (req.files || [])
-                .filter(f => f.fieldname === `newChapters[${index}][chaptervideos]`)
-                .map(f => f.path);
-
-            // ✅ Always add as a NEW chapter
+                .filter(f => f.fieldname === `newChapters_${index}`)
+                .map(f => f.path); // Cloudinary URLs
             courseData.chapters.push({
                 chaptername: chapter.chaptername,
                 chapterduration: chapter.chapterduration,
@@ -62,67 +67,69 @@ exports.updatecoursedetails = async (req, res) => {
 
         await courseData.save();
 
-        return res.status(200).json({ message: 'Course updated successfully' });
-
+        return res.status(200).json({ message: 'Course updated successfully', course: courseData });
     } catch (err) {
-        console.error(err);
+        console.error('Update Error:', err);
         res.status(500).json({ error: 'Internal Server Error: ' + err.message });
     }
 };
 
+// Helper to extract Cloudinary public ID from URL
+function extractPublicId(url) {
+    if (!url) return null;
+    const parts = url.split('/');
+    const fileName = parts[parts.length - 1];
+    return fileName.split('.')[0]; // remove extension
+}
 
 
-//  ✅ Add new chapter
-// exports.addChapter = async (req, res) => {
-//     const { courseId } = req.params;
-//     const { chaptername, chapterduration } = req.body;
+// ✅ Delete a chapter
+// exports.deleteChapter = async (req, res) => {
+//     const { courseId, chapterId } = req.params;
 
-//     if (!chaptername || !chapterduration) {
-//         return res.status(400).json({ error: "Chapter name and duration are required" });
-//     }
 
 //     try {
 //         const courseData = await course.findById(courseId);
 //         if (!courseData) return res.status(404).json({ error: "Course not found" });
 
-//         // Handle videos if uploaded
-//         let videos = [];
-//         if (req.files && req.files.length > 0) {
-//             videos = req.files.map(f => `coursesuploads/${f.filename}`);
-//         }
-
-//         const newChapter = {
-//             chaptername,
-//             chapterduration,
-//             chaptervideos: videos
-//         };
-
-//         courseData.chapters.push(newChapter);
+//         // Filter out chapter
+//         courseData.chapters = courseData.chapters.filter(ch => ch._id.toString() !== chapterId);
 //         await courseData.save();
 
-//         res.status(200).json({ message: "Chapter added successfully", chapters: courseData.chapters });
+//         res.status(200).json({ message: "Chapter deleted successfully", chapters: courseData.chapters });
 //     } catch (err) {
 //         console.error(err);
 //         res.status(500).json({ error: "Internal Server Error" });
 //     }
 // };
 
-// ✅ Delete a chapter
 exports.deleteChapter = async (req, res) => {
     const { courseId, chapterId } = req.params;
-
 
     try {
         const courseData = await course.findById(courseId);
         if (!courseData) return res.status(404).json({ error: "Course not found" });
 
-        // Filter out chapter
+        // Find the chapter to delete
+        const chapterToDelete = courseData.chapters.find(ch => ch._id.toString() === chapterId);
+        if (!chapterToDelete) return res.status(404).json({ error: "Chapter not found" });
+
+        // ✅ Delete videos from Cloudinary
+        for (const videoUrl of chapterToDelete.chaptervideos) {
+            const publicId = extractPublicId(videoUrl);
+            if (publicId) {
+                await cloudinary.uploader.destroy(publicId, { resource_type: "video" });
+            }
+        }
+
+        // Remove chapter from DB
         courseData.chapters = courseData.chapters.filter(ch => ch._id.toString() !== chapterId);
         await courseData.save();
 
         res.status(200).json({ message: "Chapter deleted successfully", chapters: courseData.chapters });
     } catch (err) {
-        console.error(err);
+        console.error('Delete Chapter Error:', err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+

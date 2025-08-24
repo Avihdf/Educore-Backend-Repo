@@ -1,28 +1,53 @@
-const user = require('../../models/user')
-const bcrypt = require('bcrypt')
+const user = require('../../models/user');
+const bcrypt = require('bcrypt');
+const cloudinary = require('cloudinary').v2;
 
 exports.updateeducatorprofile = async (req, res) => {
-    
-    const { name, dob } = req.body;  // This works now
-    const profile_picture = req.file ? req.file.filename : null; // File is parsed by Multer
-
-    
     try {
-        const admin_id = await req.admin.id
-       
-        await user.findByIdAndUpdate(admin_id,
-            {
-                name,
-                Date_of_Birth: dob,
-                profile_picture,
-            })
+        const { name, dob } = req.body;
+        const admin_id = req.admin.id;
 
-        return res.status(200).json({ message: 'Profile Updated Successfully' })
+        // Find the educator first
+        const educator = await user.findById(admin_id);
+        if (!educator) {
+            return res.status(404).json({ error: 'Educator not found' });
+        }
 
+        // ✅ Handle profile picture upload (Cloudinary URL)
+        let profile_picture = educator.profile_picture; // Keep old picture if no new upload
+        if (req.file) {
+            // Delete old picture from Cloudinary if exists
+            if (educator.profile_picture) {
+                const oldPublicId = extractPublicId(educator.profile_picture);
+                if (oldPublicId) {
+                    await cloudinary.uploader.destroy(oldPublicId);
+                }
+            }
+
+            // Save new Cloudinary URL
+            profile_picture = req.file.path;
+        }
+
+        // ✅ Update educator data
+        await user.findByIdAndUpdate(admin_id, {
+            name,
+            Date_of_Birth: dob,
+            profile_picture
+        });
+
+        return res.status(200).json({ message: 'Profile Updated Successfully' });
     } catch (err) {
-        console.log(err)
-        return res.status(401).json({ error: 'Internal server error : ' + err.message })
+        console.error('Update Educator Profile Error:', err);
+        return res.status(500).json({ error: 'Internal server error: ' + err.message });
     }
+};
+
+// Helper to extract Cloudinary public ID from a URL
+function extractPublicId(url) {
+    if (!url) return null;
+    const parts = url.split('/');
+    const fileName = parts[parts.length - 1];
+    return fileName.split('.')[0]; // remove extension
 }
 
 exports.updateadminpassword = async (req, res) => {

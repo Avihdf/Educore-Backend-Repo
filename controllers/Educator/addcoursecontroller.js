@@ -1,28 +1,12 @@
 const Course = require('../../models/courses');
-
-
-// exports.addcourses = async (req, res) => {
-// const {coursetitle,discription,language,coursetime,price,discount}=req.body
-// const{thumbnail,chaptervideos}=req.files
-// const date=new Date()
-// try{
-//     const newcourse=await new Course({
-//         coursetitle,discription,language,coursetime,Created_date:date,price,discount
-//     })
-
-//     await newcourse.save()
-
-// return res.status(200).json({ message: 'Course added successfully' });
-
+const cloudinary = require('cloudinary').v2;
 
 exports.addcourses = async (req, res) => {
-
-
     try {
         const { coursetitle, discription, language, coursetime, price, discount } = req.body;
 
+        // Validation
         const errors = [];
-
         if (!coursetitle || !coursetitle.trim()) errors.push('Course title is required');
         if (!discription || !discription.trim()) errors.push('Description is required');
         if (!language || !language.trim()) errors.push('Language is required');
@@ -31,29 +15,28 @@ exports.addcourses = async (req, res) => {
         if (discount === '' || discount === undefined) errors.push('Discount is required');
 
         if (errors.length > 0) {
-            return res.status(400).json({ errors }); // ✅ Send all errors
+            return res.status(400).json({ errors });
         }
 
+        // ✅ Get Cloudinary URL for thumbnail
+        const thumbnailFile = req.files.find(f => f.fieldname === 'thumbnail');
+        const thumbnail = thumbnailFile ? thumbnailFile.path : null;
 
-
-        // Thumbnail
-       const thumbnailFile = req.files.find(f => f.fieldname === 'thumbnail');
-        const thumbnail = thumbnailFile
-            ? `thumbnails/${thumbnailFile.filename}`
-            : null;
-
-        // Parse chapters JSON
+        // ✅ Parse chapters JSON data
         let chaptersData = [];
         if (req.body.chapters) {
-            chaptersData = JSON.parse(req.body.chapters);
+            try {
+                chaptersData = JSON.parse(req.body.chapters);
+            } catch (e) {
+                return res.status(400).json({ error: 'Invalid chapters data format' });
+            }
         }
 
-        // Build chapters array with videos
+        // ✅ Build chapters with Cloudinary video URLs
         const chapters = chaptersData.map((chapter, index) => {
-            // Filter all files for this chapter
             const videos = req.files
                 .filter(f => f.fieldname === `chaptervideos_${index}`)
-                .map(f => f.path);
+                .map(f => f.path); // `f.path` contains Cloudinary URL
 
             return {
                 chaptername: chapter.chaptername,
@@ -62,7 +45,7 @@ exports.addcourses = async (req, res) => {
             };
         });
 
-
+        // ✅ Save course with Cloudinary URLs
         const newCourse = new Course({
             coursetitle,
             discription,
@@ -77,11 +60,13 @@ exports.addcourses = async (req, res) => {
 
         await newCourse.save();
 
-
-        return res.status(200).json({ message: 'Course added successfully', course: newCourse });
+        return res.status(200).json({
+            message: 'Course added successfully',
+            course: newCourse
+        });
     } catch (err) {
         console.error('Internal server error:', err);
-        if (!res.headersSent) {  // ✅ Prevent double response
+        if (!res.headersSent) {
             return res.status(500).json({ error: 'Internal Server Error: ' + err.message });
         }
     }
