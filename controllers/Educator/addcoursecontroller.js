@@ -44,6 +44,7 @@ exports.addcourses = async (req, res) => {
                 chaptervideos: videos
             };
         });
+       
 
         // ✅ Save course with Cloudinary URLs
         const newCourse = new Course({

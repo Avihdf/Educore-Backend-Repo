@@ -11,7 +11,7 @@ const app = express();
 
 const allowedOrigins = [
   'https://educore-beta.vercel.app',
-  'http://localhost:3000' // for local dev
+  'http://localhost:5173' // for local dev
 ];
 
 app.use(cors({
@@ -90,11 +90,6 @@ app.use('/api/student',coursedata)
 app.use('/api/payment',payment)
 app.use('/api',enrollment)
 app.use('/api',courseplayer)
-
-
-// const discountprice=56776/100*15
-//  const dis=56776-discountprice
-// console.log(dis)
 
 
 

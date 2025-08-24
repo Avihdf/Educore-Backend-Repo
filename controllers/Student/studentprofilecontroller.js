@@ -2,7 +2,7 @@ const user = require('../../models/user');
 const bcrypt=require('bcrypt')
 const cloudinary = require('cloudinary').v2;
 
-exports.updateProfile = async (req, res) => {
+exports.updatestudentprofile = async (req, res) => {
     try {
         const { name, dob } = req.body;
 
