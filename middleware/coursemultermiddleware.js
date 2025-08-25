@@ -1,5 +1,3 @@
-
-
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
@@ -19,6 +17,9 @@ const storage = new CloudinaryStorage({
       folder: folder,
       allowed_formats: ['jpg', 'jpeg', 'png', 'mp4'],
       resource_type: file.mimetype.startsWith('video') ? 'video' : 'image',
+      transformation: file.mimetype.startsWith('image')
+        ? [{ quality: "auto", fetch_format: "auto" }] // Compress images
+        : undefined,
     };
   },
 });

@@ -25,6 +25,7 @@ const storage = new CloudinaryStorage({
     folder: 'general_uploads',
     allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'mp4'],
     resource_type: 'auto',
+    transformation: [{ quality: "auto", fetch_format: "auto" }] ,
   },
 });
 
