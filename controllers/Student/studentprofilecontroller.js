@@ -63,7 +63,7 @@ exports.updatestudentpassword = async (req, res) => {
 
         const userdetails = await user.findById(userid)
 
-        const match = await bcrpyt.compare(current_password, userdetails.password)
+        const match = await bcrypt.compare(current_password, userdetails.password)
         if (!match) {
             return res.status(400).json({ error: 'Current Password is Invalid' })
         }
@@ -72,7 +72,7 @@ exports.updatestudentpassword = async (req, res) => {
             return res.status(400).json({ error: `New Password and Confirm Password doesn't match` })
         }
 
-        const hash = await bcrypt.hash(new_password, 10)
+        const hash = await bcrypt.hash(new_password,10)
 
         await user.findByIdAndUpdate(userid, {
             password: hash
