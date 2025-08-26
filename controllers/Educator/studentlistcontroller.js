@@ -25,14 +25,19 @@ exports.showenrollstudentlist = async (req, res) => {
             enrollstudent.map(async (e) => {
                 const studentdetail = await user.findById(e.user_id);
                 const coursedetail = await Course.findById(e.course_id)
+
+                // Return null if course doesn't exist
+                if (!coursedetail) return null;
+
+
                 return {
                     enrollment: e,
                     student: studentdetail,
-                    course: coursedetail
+                    course: coursedetail || { coursetitle: 'Deleted Course' }
                 };
             })
         );
-      
+
 
         res.status(200).json({ students: studentdetails });
 
@@ -44,12 +49,12 @@ exports.showenrollstudentlist = async (req, res) => {
 }
 
 exports.showenrollstudentlistaftersearch = async (req, res) => {
-   const email=req.query.email
-   
-    
+    const email = req.query.email
+
+
     try {
-        const userid=await user.findOne({email})
-        const enrollstudent = await enrolluser.find({user_id:userid}).sort({ _id: -1 })
+        const userid = await user.findOne({ email })
+        const enrollstudent = await enrolluser.find({ user_id: userid }).sort({ _id: -1 })
 
         const studentdetails = await Promise.all(
             enrollstudent.map(async (e) => {
@@ -75,32 +80,32 @@ exports.showenrollstudentlistaftersearch = async (req, res) => {
 
 //CourseWise Enrollmets
 
-exports.showcoursewiseenrollmet=async(req,res)=>{
-    try{
-        const cou=await Course.find()
-        const details=await Promise.all(
-            cou.map(async (e)=>{
-                const coursedetail=await Course.findById(e._id)
-                const total=await enrolluser.find({course_id:e._id}).countDocuments()
-                return{
+exports.showcoursewiseenrollmet = async (req, res) => {
+    try {
+        const cou = await Course.find()
+        const details = await Promise.all(
+            cou.map(async (e) => {
+                const coursedetail = await Course.findById(e._id)
+                const total = await enrolluser.find({ course_id: e._id }).countDocuments()
+                return {
                     coursedetail,
-                    totalenrollments:total,
+                    totalenrollments: total,
 
                 }
             })
         )
-        return res.status(200).json({course:details})
+        return res.status(200).json({ course: details })
 
-    }catch(err){
+    } catch (err) {
         console.log(err)
-        res.status(500).json({error:'internal Server Error'+err.message})
+        res.status(500).json({ error: 'internal Server Error' + err.message })
     }
 }
 
-exports.showstudentlistcoursewise=async(req,res)=>{
-    const courseid=req.params.id
-    try{
-        const studentincourse=await enrolluser.find({course_id:courseid}).sort({ _id: -1 })
+exports.showstudentlistcoursewise = async (req, res) => {
+    const courseid = req.params.id
+    try {
+        const studentincourse = await enrolluser.find({ course_id: courseid }).sort({ _id: -1 })
 
 
         const studentdetails = await Promise.all(
@@ -119,8 +124,8 @@ exports.showstudentlistcoursewise=async(req,res)=>{
 
 
 
-    }catch(err){
+    } catch (err) {
         console.log(err)
-        res.status(500).json({error:'internal Server Error'+err.message})
+        res.status(500).json({ error: 'internal Server Error' + err.message })
     }
 }
