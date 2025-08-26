@@ -11,7 +11,8 @@ const app = express();
 
 const allowedOrigins = [
   'https://educore-beta.vercel.app',
-  'http://localhost:5173' // for local dev
+  'http://localhost:5173', // for local dev
+  'https://educore-git-main-avinash96255-1743s-projects.vercel.app'
 ];
 
 app.use(cors({

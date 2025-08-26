@@ -21,30 +21,30 @@ exports.loginformemail = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         )
-                
 
-        if (existuser.role==='educator') {
+
+        if (existuser.role === 'educator') {
             res.clearCookie('admin');
-            res.cookie('admin',token,{httpOnly:true,Credential:true,secure: true,sameSite:'none'})
+            res.cookie('admin', token, { httpOnly: true, Credential: true, secure: true, sameSite: 'None' })
             return res.status(200).json(
-            {
-                message: 'Welcome Educator ' + existuser.name,
-                name:existuser.name,
-                role: existuser.role,
-                success:true,  
-            });
+                {
+                    message: 'Welcome Educator ' + existuser.name,
+                    name: existuser.name,
+                    role: existuser.role,
+                    success: true,
+                });
         }
 
         res.clearCookie('user');
-        res.cookie('user',token,{httpOnly:true,Credential:true,secure: true,sameSite:'none'})
-        
-       
+        res.cookie('user', token, { httpOnly: true, Credential: true, secure: true, sameSite: 'None' })
+
+
         return res.status(200).json(
             {
                 message: 'Welcome to Platform ' + existuser.name,
-                name:existuser.name,
+                name: existuser.name,
                 role: existuser.role,
-                success:true,
+                success: true,
             });
 
     } catch (err) {
