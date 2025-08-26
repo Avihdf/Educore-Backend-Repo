@@ -3,6 +3,7 @@ const cloudinary = require('cloudinary').v2;
 
 exports.addcourses = async (req, res) => {
     try {
+
         const { coursetitle, discription, language, coursetime, price, discount } = req.body;
 
         // Validation
@@ -44,7 +45,7 @@ exports.addcourses = async (req, res) => {
                 chaptervideos: videos
             };
         });
-       
+
 
         // ✅ Save course with Cloudinary URLs
         const newCourse = new Course({
@@ -66,9 +67,13 @@ exports.addcourses = async (req, res) => {
             course: newCourse
         });
     } catch (err) {
-        console.error('Internal server error:', err);
+        console.error('Cloudinary Upload Error:', err);
         if (!res.headersSent) {
-            return res.status(500).json({ error: 'Internal Server Error: ' + err.message });
+            return res.status(500).json({
+                error: 'Cloudinary Upload Failed',
+                details: err.message || err
+            });
         }
     }
+
 };
