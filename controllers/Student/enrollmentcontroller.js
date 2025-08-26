@@ -11,11 +11,11 @@ exports.checkuserenrollalready = async (req, res) => {
 
   // Check if user already enrolled
   const existing = await Enrollment.findOne({ user_id, course_id });
- 
+
   if (existing) {
     return res.status(400).json({ error: 'Already enrolled in this course' });
   }
-  return res.json({success:true})
+  return res.json({ success: true })
 
 }
 
@@ -55,13 +55,19 @@ exports.createEnrollment = async (req, res) => {
 // ✅ Get enrollments for a specific user
 exports.getUserEnrollments = async (req, res) => {
   try {
+
     const id = await req.params.id
+   
 
     const userdetail = await user.findById(id)
 
-    const enrollments = await Enrollment.find({ user_id: id }).populate('course_id')
+    const enrollments = await Enrollment.find({ user_id: id }).populate('course_id');
 
-    return res.status(200).json({ enrollments, userdetail })
+    // Filter out enrollments where the course is deleted
+    const validEnrollments = enrollments.filter(enrollment => enrollment.course_id !== null);
+
+    return res.status(200).json({ enrollments: validEnrollments, userdetail });
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Internal Server Error: ' + err.message });

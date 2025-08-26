@@ -5,6 +5,10 @@ exports.updatecoursedetails = async (req, res) => {
     const { coursetitle, discription, language, coursetime, price, discount } = req.body;
     const courseid = req.params.id;
 
+    // console.log('Body:', req.body);
+    // console.log('Files:', req.files.map(f => f.fieldname));
+
+
     const errors = [];
     if (!coursetitle || !coursetitle.trim()) errors.push('Course title is required');
     if (!discription || !discription.trim()) errors.push('Description is required');
@@ -52,6 +56,9 @@ exports.updatecoursedetails = async (req, res) => {
                 return res.status(400).json({ error: 'Invalid newChapters format' });
             }
         }
+
+        // console.log('Uploaded Files:', req.files.map(f => f.fieldname));
+
 
         // ✅ Attach uploaded videos to new chapters
         newChaptersData.forEach((chapter, index) => {
