@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const chapterSchema = new mongoose.Schema({
-    chaptername: { type: String, required: true },
-    chapterduration: { type: String, required: true },
+    chaptername: { type: String},
+    chapterduration: { type: String },
     chaptervideos: [{ type: String }] // Array of video file paths
 });
 

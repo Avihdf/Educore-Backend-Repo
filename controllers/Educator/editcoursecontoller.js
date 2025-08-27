@@ -5,9 +5,9 @@ exports.updatecoursedetails = async (req, res) => {
     const { coursetitle, discription, language, coursetime, price, discount } = req.body;
     const courseid = req.params.id;
 
-    // console.log('Body:', req.body);
-    // console.log('Files:', req.files.map(f => f.fieldname));
-
+    // Fix: Proper logging
+    // console.log('Body:', JSON.stringify(req.body, null, 2));
+    // console.log('Files:', req.files?.map(f => ({ fieldname: f.fieldname, filename: f.filename })) || 'No files');
 
     const errors = [];
     if (!coursetitle || !coursetitle.trim()) errors.push('Course title is required');
@@ -27,17 +27,23 @@ exports.updatecoursedetails = async (req, res) => {
             return res.status(404).json({ error: 'Course not found' });
         }
 
-        // ✅ If a new thumbnail is uploaded, delete the old one from Cloudinary first
+        // Handle thumbnail update
         const thumbnailFile = req.files?.find(f => f.fieldname === 'thumbnail');
         if (thumbnailFile) {
             if (courseData.thumbnail) {
                 const oldThumbPublicId = extractPublicId(courseData.thumbnail);
-                if (oldThumbPublicId) await cloudinary.uploader.destroy(oldThumbPublicId);
+                if (oldThumbPublicId) {
+                    try {
+                        await cloudinary.uploader.destroy(oldThumbPublicId);
+                    } catch (cloudinaryError) {
+                        console.log('Error deleting old thumbnail:', cloudinaryError);
+                    }
+                }
             }
-            courseData.thumbnail = thumbnailFile.path; // Cloudinary URL
+            courseData.thumbnail = thumbnailFile.path;
         }
 
-        // ✅ Update basic course info
+        // Update basic course info
         courseData.coursetitle = coursetitle;
         courseData.discription = discription;
         courseData.language = language;
@@ -45,49 +51,76 @@ exports.updatecoursedetails = async (req, res) => {
         courseData.price = price;
         courseData.discount = discount;
 
-        // ✅ Parse and add new chapters (if provided)
+        // Parse new chapters
         let newChaptersData = [];
         if (req.body.newChapters) {
             try {
                 newChaptersData = typeof req.body.newChapters === "string"
                     ? JSON.parse(req.body.newChapters)
                     : req.body.newChapters;
+
+                // console.log('Parsed newChaptersData:', JSON.stringify(newChaptersData, null, 2));
             } catch (err) {
+                console.error('Error parsing newChapters:', err);
                 return res.status(400).json({ error: 'Invalid newChapters format' });
             }
         }
 
-        // console.log('Uploaded Files:', req.files.map(f => f.fieldname));
+        // Process each new chapter
+        if (newChaptersData && Array.isArray(newChaptersData)) {
+            for (let index = 0; index < newChaptersData.length; index++) {
+                const chapter = newChaptersData[index];
 
+                // Find videos for this specific chapter
+                const chapterVideos = (req.files || [])
+                    .filter(f => f.fieldname === `chapterVideos_${index}[]`)
+                    .map(f => f.path); // Cloudinary URLs
 
-        // ✅ Attach uploaded videos to new chapters
-        newChaptersData.forEach((chapter, index) => {
-            const videos = (req.files || [])
-                .filter(f => f.fieldname === `newChapters_${index}`)
-                .map(f => f.path); // Cloudinary URLs
-            courseData.chapters.push({
-                chaptername: chapter.chaptername,
-                chapterduration: chapter.chapterduration,
-                chaptervideos: videos
-            });
+                // console.log(`Chapter ${index} videos:`, chapterVideos);
+
+                // Add chapter to course
+                const newChapter = {
+                    chaptername: chapter.chaptername,
+                    chapterduration: chapter.chapterduration,
+                    chaptervideos: chapterVideos
+                };
+
+                courseData.chapters.push(newChapter);
+                // console.log(`Added chapter ${index}:`, newChapter);
+            }
+        }
+
+        // Save the updated course
+        const savedCourse = await courseData.save();
+        
+
+        return res.status(200).json({
+            message: 'Course updated successfully',
+            course: savedCourse
         });
 
-        await courseData.save();
-
-        return res.status(200).json({ message: 'Course updated successfully', course: courseData });
     } catch (err) {
-        console.error('Update Error:', err);
-        res.status(500).json({ error: 'Internal Server Error: ' + err.message });
+        console.error('Update Error Details:', err);
+        res.status(500).json({
+            error: 'Internal Server Error: ' + err.message,
+            details: err.stack
+        });
     }
 };
 
 // Helper to extract Cloudinary public ID from URL
 function extractPublicId(url) {
     if (!url) return null;
-    const parts = url.split('/');
-    const fileName = parts[parts.length - 1];
-    return fileName.split('.')[0]; // remove extension
+    try {
+        const parts = url.split('/');
+        const fileName = parts[parts.length - 1];
+        return fileName.split('.')[0];
+    } catch (error) {
+        console.error('Error extracting public ID:', error);
+        return null;
+    }
 }
+
 
 
 // ✅ Delete a chapter
