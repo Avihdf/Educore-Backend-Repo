@@ -70,6 +70,7 @@ exports.verifyotp = async (req, res) => {
 exports.changepassword = async (req, res) => {
     const { email } = req.params;
     const { password } = req.body;
+    
 
     try {
         const userexist = await user.findOne({ email });
