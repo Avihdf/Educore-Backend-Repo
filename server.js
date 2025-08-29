@@ -10,16 +10,17 @@ const app = express();
 
 
 const allowedOrigins = [
-  'https://educore-beta.vercel.app',
-  'http://localhost:5173', // for local dev
-  'https://educore-git-main-avinash96255-1743s-projects.vercel.app'
+  'https://educore-beta.vercel.app',   // Your main frontend
+  'http://localhost:5173',            // Local dev frontend
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error(`Blocked CORS request from origin: ${origin}`);
       callback(new Error('CORS Not Allowed'));
     }
   },
