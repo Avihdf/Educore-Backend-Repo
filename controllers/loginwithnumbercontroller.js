@@ -20,15 +20,15 @@ exports.sendOtp = async (req, res) => {
         const phoneWithCode = `+91${phone}`;
         // generate random OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        
+
 
 
         await axios.get(`https://2factor.in/API/V1/${API_KEY}/SMS/${phoneWithCode}/${otp}/:otp_template_name`);
-        
+
 
         // save OTP in store with expiry (5 minutes)
         otpStore[phone] = { otp, expires: Date.now() + 5 * 60 * 1000 };
-        
+
 
         return res.json({ success: true, message: "OTP sent successfully" });
 
@@ -78,7 +78,14 @@ exports.verifyOtpAndLogin = async (req, res) => {
         // set cookie based on role
         if (user.role === "educator") {
             res.clearCookie("admin");
-            res.cookie("admin", token, { httpOnly: true, secure: true });
+            //res.cookie("admin", token, { httpOnly: true, secure: true });
+            res.cookie('admin', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Lax for localhost
+                path: '/', // Global path
+            });
+
             return res.status(200).json({
                 message: "Welcome Educator " + user.name,
                 name: user.name,
@@ -88,7 +95,15 @@ exports.verifyOtpAndLogin = async (req, res) => {
         }
 
         res.clearCookie("user");
-        res.cookie("user", token, { httpOnly: true, secure: true });
+        // res.cookie("user", token, { httpOnly: true, secure: true });
+        res.cookie('user', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // false locally
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Lax for localhost
+            path: '/',
+        });
+
+
 
         return res.status(200).json({
             message: "Welcome to Platform " + user.name,

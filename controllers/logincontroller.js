@@ -25,7 +25,14 @@ exports.loginformemail = async (req, res) => {
 
         if (existuser.role === 'educator') {
             res.clearCookie('admin');
-            res.cookie('admin', token, { httpOnly: true, Credential: true, secure: true, sameSite: 'None' })
+            //res.cookie('admin', token, { httpOnly: true, Credential: true, secure: true, sameSite: 'None' })
+            res.cookie('admin', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+                sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Lax for localhost
+                path: '/', // Global path
+            });
+
             return res.status(200).json(
                 {
                     message: 'Welcome Educator ' + existuser.name,
@@ -36,7 +43,14 @@ exports.loginformemail = async (req, res) => {
         }
 
         res.clearCookie('user');
-        res.cookie('user', token, { httpOnly: true, Credential: true, secure: true, sameSite: 'None' })
+        res.cookie('user', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // false locally
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Lax for localhost
+            path: '/',
+        });
+
+
 
 
         return res.status(200).json(

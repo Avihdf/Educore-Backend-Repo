@@ -86,12 +86,27 @@ exports.updatestudentpassword = async (req, res) => {
     }
 }
 
+// exports.studentlogout = async (req, res) => {
+//     try {
+//         res.clearCookie('user');
+//         return res.status(200).json({ message: 'Logout Successfully' })
+//     } catch (err) {
+//         console.log(err)
+//         return res.status(401).json({ error: 'Internal server error : ' + err.message })
+//     }
+// }
+
 exports.studentlogout = async (req, res) => {
     try {
-        res.clearCookie('user');
-        return res.status(200).json({ message: 'Logout Successfully' })
+        res.clearCookie('user', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Lax for localhost
+            path: '/', // Must match login cookie
+        });
+        return res.status(200).json({ message: 'Logout Successfully' });
     } catch (err) {
-        console.log(err)
-        return res.status(401).json({ error: 'Internal server error : ' + err.message })
+        console.log(err);
+        return res.status(500).json({ error: 'Internal server error: ' + err.message });
     }
-}
+};
