@@ -10,6 +10,7 @@ const app = express();
 
 
 const allowedOrigins = [
+  'https://avinashthakur.me/',
   'https://educore-beta.vercel.app',   // Your main frontend
   'http://localhost:5173',            // Local dev frontend
 ];
